@@ -111,6 +111,9 @@ class PeriodicTaskManager {
 
   void addConnectorStatsTask();
 
+  void addFileSystemStatsTask();
+  void addS3FileSystemStatsTask();
+
   void addOperatingSystemStatsUpdateTask();
   void updateOperatingSystemStats();
 

@@ -189,4 +189,31 @@ constexpr folly::StringPiece kCounterMemoryPushbackReductionBytes{
 /// meantime.
 constexpr folly::StringPiece kCounterMemoryPushbackExpectedReductionBytes{
     "presto_cpp.memory_pushback_expected_reduction_bytes"};
+
+/// ================== S3 FileSystem Counters =================
+
+constexpr std::string_view kCounterS3ActiveConnections{
+    "presto_cpp.hive.s3.active_connections"};
+constexpr std::string_view kCounterS3StartedUploads{
+    "presto_cpp.hive.s3.started_uploads"};
+constexpr std::string_view kCounterS3SuccessfulUploads{
+    "presto_cpp.hive.s3.successful_uploads"};
+constexpr std::string_view kCounterS3FailedUploads{
+    "presto_cpp.hive.s3.failed_uploads"};
+constexpr std::string_view kCounterS3MetadataCalls{
+    "presto_cpp.hive.s3.metadata_calls"};
+constexpr std::string_view kCounterS3ListStatusCalls{
+    "presto_cpp.hive.s3.list_status_calls"};
+constexpr std::string_view kCounterS3ListLocatedStatusCalls{
+    "presto_cpp.hive.s3.list_located_status_calls"};
+constexpr std::string_view kCounterS3ListObjectsCalls{
+    "presto_cpp.hive.s3.list_objects_calls"};
+constexpr std::string_view kCounterS3GetObjectErrors{
+    "presto_cpp.hive.s3.get_object_errors"};
+constexpr std::string_view kCounterS3GetMetadataErrors{
+    "presto_cpp.hive.s3.get_metadata_errors"};
+constexpr std::string_view kCounterS3GetObjectRetries{
+    "presto_cpp.hive.s3.get_object_retries"};
+constexpr std::string_view kCounterS3GetMetadataRetries{
+    "presto_cpp.hive.s3.get_metadata_retries"};
 } // namespace facebook::presto
