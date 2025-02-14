@@ -70,7 +70,6 @@ if(PRESTO_ENABLE_S3)
   set(VELOX_ENABLE_S3
       ON
       CACHE BOOL "Build S3 support")
-  add_compile_definitions(PRESTO_ENABLE_S3)
 endif()
 
 if(PRESTO_ENABLE_HDFS)

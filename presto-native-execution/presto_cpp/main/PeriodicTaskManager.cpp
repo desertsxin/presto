@@ -27,9 +27,6 @@
 #include "velox/common/memory/MemoryAllocator.h"
 #include "velox/common/memory/MmapAllocator.h"
 #include "velox/connectors/hive/HiveConnector.h"
-#ifdef PRESTO_ENABLE_S3
-#include "velox/connectors/hive/storage_adapters/s3fs/S3FileSystem.h"
-#endif
 #include "velox/exec/Driver.h"
 
 #include <sys/resource.h>
@@ -208,60 +205,6 @@ class HiveConnectorStatsReporter {
   size_t lastNumLookups_{0};
 };
 
-#ifdef PRESTO_ENABLE_S3
-class S3FileSystemStatsReporter {
- public:
-  static S3FileSystemStatsReporter& getInstance() {
-    static S3FileSystemStatsReporter instance;
-    return instance;
-  }
-
-  S3FileSystemStatsReporter(const S3FileSystemStatsReporter&) = delete;
-  S3FileSystemStatsReporter& operator=(const S3FileSystemStatsReporter&) = delete;
-  S3FileSystemStatsReporter(S3FileSystemStatsReporter&&) = delete;
-  S3FileSystemStatsReporter& operator=(S3FileSystemStatsReporter&&) = delete;
-
-  static void report() {
-    getInstance();
-    RECORD_METRIC_VALUE(kCounterS3ActiveConnections,
-        velox::filesystems::S3Metrics::getInstance().activeConnections.load(std::memory_order_relaxed));
-    RECORD_METRIC_VALUE(kCounterS3StartedUploads,
-        velox::filesystems::S3Metrics::getInstance().startedUploads.load(std::memory_order_relaxed));
-    RECORD_METRIC_VALUE(kCounterS3FailedUploads,
-        velox::filesystems::S3Metrics::getInstance().failedUploads.load(std::memory_order_relaxed));
-    RECORD_METRIC_VALUE(kCounterS3SuccessfulUploads,
-        velox::filesystems::S3Metrics::getInstance().successfulUploads.load(std::memory_order_relaxed));
-    RECORD_METRIC_VALUE(kCounterS3MetadataCalls,
-        velox::filesystems::S3Metrics::getInstance().metadataCalls.load(std::memory_order_relaxed));
-    RECORD_METRIC_VALUE(kCounterS3ListStatusCalls,
-        velox::filesystems::S3Metrics::getInstance().listStatusCalls.load(std::memory_order_relaxed));
-    RECORD_METRIC_VALUE(kCounterS3ListLocatedStatusCalls,
-        velox::filesystems::S3Metrics::getInstance().listLocatedStatusCalls.load(std::memory_order_relaxed));
-    RECORD_METRIC_VALUE(kCounterS3GetObjectErrors,
-        velox::filesystems::S3Metrics::getInstance().getObjectErrors.load(std::memory_order_relaxed));
-    RECORD_METRIC_VALUE(kCounterS3GetMetadataErrors,
-        velox::filesystems::S3Metrics::getInstance().getMetadataErrors.load(std::memory_order_relaxed));
-    RECORD_METRIC_VALUE(kCounterS3GetObjectRetries,
-        velox::filesystems::S3Metrics::getInstance().getObjectRetries.load(std::memory_order_relaxed));
-    RECORD_METRIC_VALUE(kCounterS3GetMetadataRetries,
-        velox::filesystems::S3Metrics::getInstance().getMetadataRetries.load(std::memory_order_relaxed));
-  }
-private:
-  S3FileSystemStatsReporter() {
-    DEFINE_METRIC(kCounterS3ActiveConnections, velox::StatType::AVG);
-    DEFINE_METRIC(kCounterS3StartedUploads, velox::StatType::AVG);
-    DEFINE_METRIC(kCounterS3FailedUploads, velox::StatType::AVG);
-    DEFINE_METRIC(kCounterS3SuccessfulUploads, velox::StatType::AVG);
-    DEFINE_METRIC(kCounterS3MetadataCalls, velox::StatType::AVG);
-    DEFINE_METRIC(kCounterS3ListStatusCalls, velox::StatType::AVG);
-    DEFINE_METRIC(kCounterS3ListLocatedStatusCalls, velox::StatType::AVG);
-    DEFINE_METRIC(kCounterS3GetObjectErrors, velox::StatType::AVG);
-    DEFINE_METRIC(kCounterS3GetMetadataErrors, velox::StatType::AVG);
-    DEFINE_METRIC(kCounterS3GetObjectRetries, velox::StatType::AVG);
-    DEFINE_METRIC(kCounterS3GetMetadataRetries, velox::StatType::AVG);
-  }
-};
-#endif
 } // namespace
 
 // Every two seconds we export server counters.
@@ -278,8 +221,6 @@ static constexpr size_t kOsPeriodGlobalCounters{2'000'000}; // 2 seconds
 static constexpr size_t kHttpServerPeriodGlobalCounters{
     60'000'000}; // 60 seconds.
 static constexpr size_t kHttpClientPeriodGlobalCounters{
-    60'000'000}; // 60 seconds.
-static constexpr size_t kS3FileSystemPeriodGlobalCounters{
     60'000'000}; // 60 seconds.
 
 PeriodicTaskManager::PeriodicTaskManager(
@@ -333,8 +274,6 @@ void PeriodicTaskManager::start() {
   addPrestoExchangeSourceMemoryStatsTask();
 
   addConnectorStatsTask();
-
-  addFileSystemStatsTask();
 
   addOperatingSystemStatsUpdateTask();
 
@@ -481,20 +420,6 @@ void PeriodicTaskManager::addConnectorStatsTask() {
       },
       kConnectorPeriodGlobalCounters,
       "ConnectorStats");
-}
-
-void PeriodicTaskManager::addFileSystemStatsTask() {
-  addS3FileSystemStatsTask();
-}
-
-void PeriodicTaskManager::addS3FileSystemStatsTask() {
-#ifdef PRESTO_ENABLE_S3
-  addTask(
-    []() { S3FileSystemStatsReporter::report(); },
-    kS3FileSystemPeriodGlobalCounters,
-    "S3FileSystemStats"
-  );
-#endif
 }
 
 void PeriodicTaskManager::updateOperatingSystemStats() {
